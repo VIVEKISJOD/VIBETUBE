@@ -43,7 +43,7 @@ private fun VybetubeApp() {
     val configuration = LocalConfiguration.current
     val isTv = (configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
     val useRail = isTv || configuration.screenWidthDp >= 840
-    var selected by remember { mutableStateOf("Settings") }
+    var selected by remember { mutableStateOf("Home") }
     MaterialTheme(
         colorScheme = darkColorScheme(
             background = canvas, surface = surface, primary = accent,
