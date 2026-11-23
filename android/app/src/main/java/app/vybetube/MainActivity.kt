@@ -43,6 +43,7 @@ private val muted = Color(0xFF9299A8)
 private fun VybetubeApp() {
     val configuration = LocalConfiguration.current
     val isTv = (configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION
+    val useRail = isTv || configuration.screenWidthDp >= 840
     var selected by remember { mutableStateOf("Settings") }
     MaterialTheme(
         colorScheme = darkColorScheme(
@@ -52,11 +53,11 @@ private fun VybetubeApp() {
         )
     ) {
         Row(Modifier.fillMaxSize().background(canvas)) {
-            if (isTv) {
+            if (useRail) {
                 NavigationRail(selected, isTv) { selected = it }
             }
             Column(Modifier.fillMaxSize().weight(1f)) {
-                if (!isTv) {
+                if (!useRail) {
                     Row(
                         Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 18.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -71,7 +72,7 @@ private fun VybetubeApp() {
                     "Settings" -> SettingsScreen()
                     else -> PlaceholderScreen(selected)
                 }
-                if (!isTv) {
+                if (!useRail) {
                     NavigationBar(containerColor = surface) {
                         listOf("Home", "Search", "Library", "Settings").forEach { item ->
                             NavigationBarItem(
