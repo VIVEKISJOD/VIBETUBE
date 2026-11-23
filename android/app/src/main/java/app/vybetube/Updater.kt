@@ -1,6 +1,7 @@
 package app.vybetube
 
 import android.content.Intent
+import android.os.Build
 import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
@@ -53,12 +54,25 @@ fun UpdateCard() {
     var status by remember { mutableStateOf("Check GitHub for the latest stable version.") }
     var busy by remember { mutableStateOf(false) }
     var downloadedApk by remember { mutableStateOf<File?>(null) }
+    var updateAvailable by remember { mutableStateOf(false) }
+    var installedVersion by remember { mutableStateOf("0.1.0") }
 
     fun openReleases() {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(RELEASES_PAGE)))
     }
 
     fun install(file: File) {
+        val archive = context.packageManager.getPackageArchiveInfo(file.absolutePath, 0)
+            ?: throw IllegalStateException("Downloaded file is not a valid Android APK.")
+        if (archive.packageName != context.packageName) {
+            throw SecurityException("APK package name does not match this installation.")
+        }
+        val installedInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+        val installedCode = if (Build.VERSION.SDK_INT >= 28) installedInfo.longVersionCode else installedInfo.versionCode.toLong()
+        val candidateCode = if (Build.VERSION.SDK_INT >= 28) archive.longVersionCode else archive.versionCode.toLong()
+        if (candidateCode <= installedCode) {
+            throw IllegalStateException("This APK is not a newer version than the installed app.")
+        }
         if (!context.packageManager.canRequestPackageInstalls()) {
             val permissionIntent = Intent(
                 Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
@@ -91,7 +105,7 @@ fun UpdateCard() {
         ) {
             Text("VYBETUBE UPDATES", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Text("Keep your app current", style = MaterialTheme.typography.titleMedium)
-            Text("Installed version: 0.1.0", style = MaterialTheme.typography.bodySmall)
+            Text("Installed version: $installedVersion", style = MaterialTheme.typography.bodySmall)
             Text(status, style = MaterialTheme.typography.bodyMedium)
             release?.let { latest ->
                 Text("Latest: ${latest.name} (${latest.tag})", style = MaterialTheme.typography.titleSmall)
@@ -116,8 +130,10 @@ fun UpdateCard() {
                                 val result = withContext(Dispatchers.IO) { fetchLatestRelease() }
                                 release = result
                                 val current = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0.1.0"
-                                status = if (compareVersions(result.tag, current) > 0) {
-                                    "A newer version is available."
+                                installedVersion = current
+                                updateAvailable = compareVersions(result.tag, current) > 0
+                                status = if (updateAvailable) {
+                                    "A newer stable version is available."
                                 } else {
                                     "You're using the latest stable version, or a newer build."
                                 }
@@ -131,7 +147,7 @@ fun UpdateCard() {
                 ) { Text("Check for updates") }
                 OutlinedButton(onClick = { openReleases() }) { Text("View all releases") }
             }
-            release?.let { latest ->
+            release?.takeIf { updateAvailable }?.let { latest ->
                 val readyFile = downloadedApk
                 Button(
                     enabled = !busy,
