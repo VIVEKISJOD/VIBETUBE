@@ -1,0 +1,12 @@
+[package]
+name = "vybetube-core"
+version = "0.1.0"
+edition = "2021"
+license = "UNLICENSED"
+description = "Provider-independent core models and policies for Vybetube"
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
