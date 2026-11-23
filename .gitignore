@@ -1,0 +1,16 @@
+# Gradle / Android
+.gradle/
+**/build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+*.apk
+*.aab
+# Rust
+target/
+**/target/
+# Signing
+*.jks
+*.keystore
+keystore.properties
