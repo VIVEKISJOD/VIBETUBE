@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 private val android.content.Context.settingsStore by preferencesDataStore(name = "vybetube_settings")
@@ -53,9 +52,7 @@ private fun VybetubeApp() {
         )
     ) {
         Row(Modifier.fillMaxSize().background(canvas)) {
-            if (useRail) {
-                NavigationRail(selected, isTv) { selected = it }
-            }
+            if (useRail) NavigationRail(selected, isTv) { selected = it }
             Column(Modifier.fillMaxSize().weight(1f)) {
                 if (!useRail) {
                     Row(
@@ -196,6 +193,7 @@ private fun SettingsScreen() {
         item {
             Text("More controls are being added as their underlying features land. A setting will never be shown as available until it has a working implementation.", color = muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp))
         }
+        item { UpdateCard() }
     }
 }
 
