@@ -1,7 +1,6 @@
 package app.vybetube
 
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
@@ -64,7 +63,7 @@ fun UpdateCard() {
             val permissionIntent = Intent(
                 Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                 Uri.parse("package:${context.packageName}")
-            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
             context.startActivity(permissionIntent)
             status = "Allow Vybetube to install updates, return here, then tap Install."
             return
@@ -76,7 +75,7 @@ fun UpdateCard() {
         )
         val installIntent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(apkUri, "application/vnd.android.package-archive")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         context.startActivity(installIntent)
     }
@@ -145,7 +144,7 @@ fun UpdateCard() {
                             scope.launch {
                                 try {
                                     val file = withContext(Dispatchers.IO) {
-                                        downloadAndVerify(latest)
+                                        downloadAndVerify(context.cacheDir, latest)
                                     }
                                     downloadedApk = file
                                     status = "Download verified. Android will ask you to confirm installation."
@@ -163,7 +162,7 @@ fun UpdateCard() {
                 }
             }
             Text(
-                "Updates are downloaded from this project's GitHub Releases. Android confirms installation; Vybetube cannot silently install APKs.",
+                "Updates come from this project's GitHub Releases. Android confirms installation; Vybetube cannot silently install APKs.",
                 style = MaterialTheme.typography.bodySmall
             )
         }
@@ -190,17 +189,18 @@ private fun fetchLatestRelease(): VybetubeRelease {
         var digest: String? = null
         for (index in 0 until assets.length()) {
             val asset = assets.getJSONObject(index)
-            val name = asset.optString("name")
-            if (name.endsWith(".apk", ignoreCase = true)) {
+            if (asset.optString("name").endsWith(".apk", ignoreCase = true)) {
                 apkUrl = asset.optString("browser_download_url")
-                digest = asset.optString("digest").removePrefix("sha256:").takeIf { it.matches(Regex("[a-fA-F0-9]{64}")) }
+                digest = asset.optString("digest").removePrefix("sha256:")
+                    .takeIf { it.matches(Regex("[a-fA-F0-9]{64}")) }
                 break
             }
         }
         val safeUrl = apkUrl ?: throw IllegalStateException("This release has no APK asset yet.")
-        val safeDigest = digest ?: throw IllegalStateException("Release APK is missing GitHub's SHA-256 digest. Download disabled for safety.")
+        val safeDigest = digest ?: throw IllegalStateException("Release APK has no SHA-256 digest. Download disabled for safety.")
         val uri = Uri.parse(safeUrl)
-        if (uri.scheme != "https" || uri.host != "github.com" && uri.host != "objects.githubusercontent.com" && uri.host != "release-assets.githubusercontent.com") {
+        val trustedHosts = setOf("github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com")
+        if (uri.scheme != "https" || uri.host !in trustedHosts) {
             throw IllegalStateException("Release asset URL is not trusted.")
         }
         return VybetubeRelease(
@@ -215,7 +215,7 @@ private fun fetchLatestRelease(): VybetubeRelease {
     }
 }
 
-private fun downloadAndVerify(release: VybetubeRelease): File {
+private fun downloadAndVerify(cacheDir: File, release: VybetubeRelease): File {
     val connection = URL(release.apkUrl).openConnection() as HttpURLConnection
     try {
         connection.connectTimeout = 15000
@@ -224,9 +224,8 @@ private fun downloadAndVerify(release: VybetubeRelease): File {
         if (connection.contentLengthLong > MAX_APK_BYTES) {
             throw IllegalStateException("APK exceeds the 300 MB safety limit.")
         }
-        val directory = File(System.getProperty("java.io.tmpdir") ?: ".", "vybetube-updates")
-        // Use the app cache directory through the caller-specific cache path below.
-        val output = File.createTempFile("vybetube-", ".apk", directory.apply { mkdirs() })
+        val directory = File(cacheDir, "vybetube-updates").apply { mkdirs() }
+        val output = File.createTempFile("vybetube-", ".apk", directory)
         val digest = MessageDigest.getInstance("SHA-256")
         var total = 0L
         connection.inputStream.use { input ->
