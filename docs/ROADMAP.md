@@ -7,16 +7,18 @@
 - [x] Local DataStore-backed preference switches for the initial settings.
 - [x] Rust workspace with provider-independent cache and download-state primitives.
 - [x] Clear product boundary: YouTube account APIs are not unrestricted stream/download APIs.
+- [x] In-app updater requirements documented: GitHub Releases for direct APK builds; Android Package Installer confirmation; checksum and signing safeguards.
 
 ## Next implementation milestones
 
-1. **Device experience:** refine TV detection, D-pad focus order, overscan-safe spacing, remote back behaviour, tablet navigation and accessibility.
-2. **Playback:** integrate Media3 session/service, audio focus, notification controls, PiP, subtitle tracks, playback speed and resume position using permitted media sources.
-3. **Library:** local playlists, queue persistence, history search, bookmarks and export/import.
-4. **Downloads:** permission-aware source capability checks, quality choices from actual source formats, pause/resume, storage selection and retry policy.
-5. **Providers:** define a provider interface and implement only integrations whose access methods and terms permit the intended use.
-6. **Rust bridge:** define a stable JNI/UniFFI boundary and move provider-independent cache, filtering and scheduling logic behind it.
-7. **Quality:** unit/UI tests, accessibility checks, performance profiling, crash-safe migrations and signed release workflow.
+1. **In-app updater:** implement release checking, stable/beta channels, changelog display, verified APK download, progress/retry and Android Package Installer handoff. Play builds must use Play's in-app update API instead.
+2. **Device experience:** refine TV detection, D-pad focus order, overscan-safe spacing, remote back behaviour, tablet navigation and accessibility.
+3. **Playback:** integrate Media3 session/service, audio focus, notification controls, PiP, subtitle tracks, playback speed and resume position using permitted media sources.
+4. **Library:** local playlists, queue persistence, history search, bookmarks and export/import.
+5. **Downloads:** permission-aware source capability checks, quality choices from actual source formats, pause/resume, storage selection and retry policy.
+6. **Providers:** define a provider interface and implement only integrations whose access methods and terms permit the intended use.
+7. **Rust bridge:** define a stable JNI/UniFFI boundary and move provider-independent cache, filtering and scheduling logic behind it.
+8. **Quality:** unit/UI tests, accessibility checks, performance profiling, crash-safe migrations and signed release workflow.
 
 ## Settings policy
 
